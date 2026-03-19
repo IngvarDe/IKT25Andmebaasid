@@ -726,3 +726,193 @@ print 'Name = ' + @FirstName
 
 --rida 668
 --tund 8
+--19.03.2026
+
+
+sp_help spGetNameById
+
+create proc spGetNameById2
+@Id int
+--kui on begin, siis on ka end kuskil olemas
+as begin
+	return (select FirstName from Employees where Id = @Id)
+end
+
+--tuleb veateade kuna kutsusime välja int-i, aga Tom on nvarchar
+declare @EmployeeName nvarchar(50)
+execute @EmployeeName = spGetNameById2 1
+print 'Name of the employee = ' + @EmployeeName
+
+
+--sisseehitatud string funktsioonid
+--see konverteerib ASCII tähe väärtuse numbriks
+select ASCII('A')
+
+select char(65)
+
+--prindime kogu tähestiku välja
+declare @Start int
+set @Start = 97
+--kasutate while, et näidata kogu tähestik ette
+while (@Start <= 122)
+begin
+	select char (@Start)
+	set @Start = @Start + 1
+end
+
+--eemaldema tühjad kohad sulgudes
+select ('               Hello')
+select LTRIM('               Hello')
+
+--tühikute eemaldamine veerust, mis on tabelis
+select FirstName, MiddleName, LastName from Employees
+--eemaldage tühikud FirstName veerust ära
+select ltrim(FirstName) as Name, MiddleName, LastName from Employees
+
+--paremalt poolt tühjad stringid lõikab ära
+select rtrim('    Hello     ')
+
+--keerab kooloni sees olevad andmed vastupidiseks
+--vastavalt lower-ga ja uppper-ga saan muuta m'rkide suurust
+--reverse funktsioon pöörab kõik ümber
+select Reverse(upper(ltrim(FirstName))) as FirstName, MiddleName, lower(LastName),
+rtrim(ltrim(FirstName)) + ' ' + MiddleName + ' ' + LastName as FullName
+from Employees
+
+--left, right, substring
+--vasakult poolt neli esimest tähte
+select left('ABCDEF', 4)
+--paremalt poolt kolm tähte
+select right('ABCDEF', 3)
+
+--kuvab @-tähemärgi asetust e mitmes on @-märk
+select CHARINDEX('@', 'sara@aaa.com')
+
+--esimene nr peale komakohta näitab, et mitmendast alustab ja
+--siis mitu nr peale seda kuvada
+select SUBSTRING('pam@bbb.com', 5, 2)
+
+-- @ - märgist kuvab kolm tähemärki. Viimase nr saab määrata pikkust
+select SUBSTRING('pam@bbb.com', charindex('@', 'pam@bbb.com') + 1, 3)
+
+--peale @-märki hakkab kuvama tulemust, nr saab kaugust seadistada
+select SUBSTRING('pam@bbb.com', charindex('@', 'pam@bbb.com') + 5,
+len('pam@bbb.com') - charindex('@', 'pam@bbb.com'))
+
+alter table Employees
+add Email nvarchar(20)
+
+select * from Employees
+
+update Employees set Email = 'Tom@aaa.com' where Id = 1
+update Employees set Email = 'Pam@bbb.com' where Id = 2
+update Employees set Email = 'John@aaa.com' where Id = 3
+update Employees set Email = 'Sam@bbb.com' where Id = 4
+update Employees set Email = 'Todd@bbb.com' where Id = 5
+update Employees set Email = 'Ben@ccc.com' where Id = 6
+update Employees set Email = 'Sara@ccc.com' where Id = 7
+update Employees set Email = 'Valarie@aaa.com' where Id = 8
+update Employees set Email = 'James@bbb.com' where Id = 9
+update Employees set Email = 'Russel@bbb.com' where Id = 10
+
+--soovime teada saada domeeninimesid emailides
+select SUBSTRING (Email, charindex('@', Email) + 1,
+len (Email) - charindex('@', Email)) as EmailDomain
+from Employees
+
+--alates teisest tähest emailis kuni @ märgini on tärnid
+select FirstName, LastName,
+	substring(Email, 1, 2) + replicate('*', 5) +
+	substring(Email, charindex('@', Email), len(Email) - charindex('@', Email)+1) as Email
+from Employees
+
+--kolm korda näitab stringis olevat väärtust
+select replicate('asd', 3)
+
+--tühiku sisestamine
+select space(5)
+
+--tühiku sisestamine FirstName ja LastName vahele
+select FirstName + space(25) + LastName as FullName
+from Employees
+
+---PATINDEX
+-- sama, mis charindex, aga dünaamilisem ja saab kasutada wildcardi
+select Email, PATINDEX('%@aaa.com', Email) as FirstOccurence
+from Employees
+where PATINDEX('%@aaa.com', Email) > 0
+--leian k]ik selle domeeni esindajad ja alates mitmendast märgist algab @
+
+--k]ik .com emailid asendab .net-ga
+select Email, replace(Email, '.com', '.net') as ConvertedEmail
+from Employees
+
+--soovin asendada peale esimest m'rki kolm tähte viie tärniga
+select FirstName, LastName, Email,
+	stuff(Email, 2, 3, '*****') as StuffedEmail
+from Employees
+
+create table DateTime
+(
+	c_time time,
+	c_date date,
+	c_smalldatetime smalldatetime,
+	c_datetime datetime,
+	c_datetime2 datetime2,
+	c_datetimeoffset datetimeoffset
+)
+
+select * from DateTime
+
+--konkreetse masina kellaaeg
+select getdate(), 'GETDATE()'
+
+insert into DateTime
+values (getdate(), getdate(), getdate(), getdate(), getdate(), getdate())
+
+select * from DateTime
+
+update DateTime set c_datetimeoffset = '2026-04-08 14:49:28.1933333 +10:00'
+where c_datetimeoffset = '2026-03-19 14:25:09.8900000 +00:00'
+
+select CURRENT_TIMESTAMP, 'CURRENT_TIMESTAMP' --aja päring
+select SYSDATETIME(), 'SYSDATETIME' --veel täpsem aja päring
+select SYSDATETIMEOFFSET(), 'SYSDATETIMEOFFSET' --t'pne aeg koos ajalise nihkega
+select GETUTCDATE(), 'GETUTCDATE' ---UTC aeg
+
+--saab kontrollida, kas on õige andmetüüp
+select isdate('asd') -- tagastab 0 kuna string ei ole date
+select isdate(GETDATE()) -- kuidas saada vastuseks 1 isdate puhul?
+select isdate('2026-04-08 14:49:28.193333') --tagastab 0 kuna max kolm komakohta võib olla
+select isdate('2026-04-08 14:49:28.193') --tagastab 1
+select DAY(GETDATE()) --annab tänase päeva nr
+select DAY('01/24/2026') --annab stringis oleva kp ja järjestus peab olema õige
+select Month(GETDATE()) --annab jooksva kuu nr
+select Month('01/24/2026') --annab stringis oleva kuu ja järjestus peab olema õige
+select YEAR(GETDATE()) --annab jooksva aasta nr
+select YEAR('01/24/2026') --annab stringis oleva aasta ja järjestus peab olema õige
+
+select datename(day, '2026-04-08 14:49:28.193') --annab stringis oleva päeva nr
+select datename(weekday, '2026-04-08 14:49:28.193') --annab stringis oleva päeva sõnana
+select datename(month, '2026-04-08 14:49:28.193') --annab stringis oleva kuu sõnana
+
+create table EmployeesWithDates
+(
+	Id nvarchar(2),
+	Name nvarchar(20),
+	DateOfBirth datetime
+)
+
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (1, 'Sam', '1980-12-30 00:00:00.000');
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (2, 'Pam', '1982-09-01 12:02:36.260');
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (3, 'John', '1985-08-22 12:03:30.370');
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (4, 'Sara', '1979-11-29 12:59:30.670');
+
+select * from EmployeesWithDates
+
+--- rida 861
+--- tund 9
