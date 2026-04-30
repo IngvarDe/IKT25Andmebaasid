@@ -1697,7 +1697,7 @@ as begin
 	declare @AuditString nvarchar(1000)
 
 	-- laeb kõik uuendatud andmed temp tabeli alla
-	select * from #TempTable
+	select * into #TempTable
 	from inserted
 
 	-- käib läbi kõik andmed temp tabelist
@@ -1721,5 +1721,44 @@ as begin
 
 		---rida 1677
 		---tund 14
-		---
+		---30.04.26
+		--hakkab võrdlema igat muutujat, et kas toimus andmete muutus
+		set @AuditString = 'Employee with Id = ' + cast(@Id as nvarchar(4)) + ' changed '
+		if(@OldGender <> @NewGender)
+			set @AuditString = @AuditString + ' Gender from ' + @OldGender + ' to ' +
+			@NewGender
+
+		if(@OldSalary <> @NewSalary)
+			set @AuditString = @AuditString + ' Salary from ' + cast(@OldSalary as nvarchar(20)) + ' to ' +
+			cast(@NewSalary as nvarchar(20))
+
+		if(@OldDepartmentId <> @NewDepartmentId)
+			set @AuditString = @AuditString + ' DepartmentId from ' + cast(@OldDepartmentId as nvarchar(20)) + ' to ' +
+			cast(@NewDepartmentId as nvarchar(20))
+
+		if(@OldManagerId <> @NewManagerId)
+			set @AuditString = @AuditString + ' ManagerId from ' + cast(@OldManagerId as nvarchar(20)) + ' to ' +
+			cast(@NewManagerId as nvarchar(20))
+
+		if(@OldFirstName <> @NewFirstName)
+			set @AuditString = @AuditString + ' FirstName from ' + @OldFirstName + ' to ' +
+			@NewFirstName
+
+		if(@OldMiddleName <> @NewMiddleName)
+			set @AuditString = @AuditString + ' Middlename from ' + @OldMiddleName + ' to ' +
+			@NewMiddleName
+
+		if(@OldLastName <> @NewLastName)
+			set @AuditString = @AuditString + ' Lastname from ' + @OldLastName + ' to ' +
+			@NewLastName
+
+		if(@OldEmail <> @NewEmail)
+			set @AuditString = @AuditString + ' Email from ' + @OldEmail + ' to ' +
+			@NewEmail
+
+		insert into dbo.EmployeeAudit values (@AuditString)
+		--kustutab temp tabelist rea
+		delete from #TempTable where Id = @Id
+	end
+end
 
