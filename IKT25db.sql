@@ -1900,8 +1900,130 @@ end
 
 --uuendame andmeid, kasutada vEmployeeDetails
 --uuendada seal, kus Id on 1
-update
+update Employee set Name = 'John123', Gender = 'Male', DepartmentId = 3
+where Id = 1
 
+select * from vEmployeeDetails
 
+--- delete trigger
+create view vEmployeeCount
+as
+select DepartmentId, DepartmentName, count(*) as TotalEmployees
+from Employee
+join Department
+on Employee.DepartmentId = Department.Id
+group by DepartmentName, DepartmentId
 
+select * from vEmployeeCount
+
+--vaja teha päring, kus on töötajaid 2tk või rohkem
+--kasutada vEmployeeCount
+select DepartmentName, TotalEmployees from vEmployeeCount
+where TotalEmployees >= 2
+
+---
+select DepartmentName, DepartmentId, count(*) as TotalEmployees
+into #TempEmployeeCount
+from Employee
+join Department
+on Employee.DepartmentId = Department.Id
+group by DepartmentName, DepartmentId
+
+select * from #TempEmployeeCount
+
+--läbi ajutise tabeli saab samu andmeid vaadata, kui seal on info olemas
+select DepartmentName, TotalEmployees from #TempEmployeeCount
+where TotalEmployees >= 2
+
+--tuleb teha trigger nimega trEmployeeDetails_InsteadOfDelete
+--ja kasutada vEmployeeDetails
+--triggeri tüüp on instead of delete
+create trigger trEmployeeDetails_InsteadOfDelete
+on vEmployeeDetails
+instead of delete
+as begin
+	delete Employee
+	from Employee
+	join deleted
+	on Employee.Id = deleted.Id
+end
+
+delete from vEmployeeDetails where Id = 7
+
+--- CTE e common table expression
+select * from Employee
+
+--CTE näide
+with EmployeeCount(DepartmentName, DepartmentId, TotalEmployees)
+as
+	(
+	select DepartmentName, DepartmentId, count(*) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	group by DepartmentName, DepartmentId
+	)
+select DepartmentName, TotalEmployees
+from EmployeeCount
+where TotalEmployees >= 2
+
+-- CTE-d võivad sarnaneda temp tabeliga
+-- sarnane päritud tabelile ja ei ole salvestatud objektina
+-- ning kestab päringu ulatuses
+
+--päritud tabel
+select DepartmentName, TotalEmployees
+from
+(
+	select DepartmentName, DepartmentId, count(*) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	group by DepartmentName, DepartmentId
+)
+as EmployeeCount
+where TotalEmployees >= 2
+
+--tehke päring, kus on kaks CTE päringut sees
+with EmployeeCountBy_Payroll_IT_Dept(DepartmentName, Total)
+as
+(
+	select DepartmentName, count(Employee.Id) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	where DepartmentName in ('Payroll', 'IT')
+	group by DepartmentName
+),
+EmployeeCountBy_HR_Admin_Dept(DepartmentName, Total)
+as
+(
+	select DepartmentName, count(Employee.Id) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	group by DepartmentName
+)
+--kui on kaks CTE-d, siis unioni abil ühendab päringu
+select * from EmployeeCountBy_Payroll_IT_Dept
+union
+select * from EmployeeCountBy_HR_Admin_Dept
+
+--teha CTE päring nimega EmployeeCount
+--järjestaks DepartmentName järgi ära
+with EmployeeCount(DepartmentId, TotalEmployees)
+as
+	(
+		select DepartmentId, count(*) as TotalEmployees
+		from Employee
+		group by DepartmentId
+	)
+--select 'Hello'
+--- peale CTE-d peab kohe tulema käsklus SELECT, INSERT, UPDATE või DELETE
+--- kui proovid midagi muud, siis tuleb veateade
+select DepartmentName
+from Department
+join Employee
+on Department.Id = Employee.DepartmentId
+order by DepartmentName
 
