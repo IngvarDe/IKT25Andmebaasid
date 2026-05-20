@@ -2484,3 +2484,7 @@ begin
 	print @Counter
 	set @Counter = @Counter + 1
 end
+
+--- tund 17
+--- rida 2507
+--- 27.05.26
