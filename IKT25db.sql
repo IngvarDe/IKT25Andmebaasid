@@ -2859,5 +2859,56 @@ update Inventory set ItemsInStock = 9 where Id = 1
 --kliendile tuleb arve
 waitfor delay '00:00:15'
 --ebapiisav saldojääk, teeb rollback-i
+rollback tran
 
+-- 2 käsklus
+--- samal ajal tegin uue päringuga akna,
+--- kus kohe peale esimest käsklust käivitan
+--- teise käskluse
+--- 2 transaction
+set tran isolation level read uncommited
+select * from Inventory where Id = 1
+-- 3 käsklus
+--- nüüd panen selle käskluse tööle
+--- käivita, kui käsklus 1 on möödas
+select *from Inventory (nolock) where Id = 1
+--- muutsin esimese käsuga 9 iPhone peale, aga
+--- ikka on 10 tk.
 
+--- Lost update e kadunud uuendused
+select * from Inventory
+
+--- 1 tran
+set tran isolation level repeatable read
+begin tran
+declare @ItemsInStock int
+
+select @ItemsInStock = ItemsInStock 
+from Inventory where Id = 1
+
+waitfor delay '00:00:15'
+set @ItemsInStock = @ItemsInStock - 1
+
+update Inventory 
+set ItemsInStock = @ItemsInStock where Id = 1
+
+print @ItemsInStock
+commit transaction
+
+--- samal ajal panen teise transactioni tööle
+set tran isolation level repeatable read
+begin tran
+declare @ItemsInStock int
+
+select @ItemsInStock = ItemsInStock 
+from dbo.Inventory where Id = 1
+
+waitfor delay '00:00:01'
+set @ItemsInStock = @ItemsInStock - 2
+
+update Inventory
+set ItemsInStock = @ItemsInStock
+where Id = 1
+
+print @ItemsInStock
+commit tran
